@@ -1,0 +1,154 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model addresses {
+  address_id     Int         @id @default(autoincrement())
+  street         String      @db.VarChar(50)
+  number         Int
+  residence_type String?     @db.VarChar(50)
+  client_id      Int
+  region_id      Int
+  commune_id     Int
+  clients        clients     @relation(fields: [client_id], references: [client_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_client_id")
+  communes       communes    @relation(fields: [commune_id], references: [commune_id], onDelete: SetNull, onUpdate: NoAction, map: "fk_commune_id")
+  regions        regions     @relation(fields: [region_id], references: [region_id], onDelete: SetNull, onUpdate: NoAction, map: "fk_region_id")
+  trackings      trackings[]
+}
+
+model categories {
+  category_id Int        @id @default(autoincrement())
+  category    String     @db.VarChar(35)
+  products    products[]
+}
+
+model clients {
+  client_id      Int         @id @default(autoincrement())
+  name           String      @db.VarChar(45)
+  first_surname  String      @db.VarChar(45)
+  second_surname String      @db.VarChar(45)
+  password       String      @db.VarChar(45)
+  email          String      @db.VarChar(45)
+  phone          String      @db.VarChar(20)
+  first_login    DateTime    @db.Date
+  last_login     DateTime    @db.Date
+  addresses      addresses[]
+  lists          lists[]
+  shopping       shopping[]
+}
+
+model communes {
+  commune_id Int         @id @default(autoincrement())
+  name       String      @db.VarChar(30)
+  addresses  addresses[]
+}
+
+model coupons {
+  coupon_id        Int                @id @default(autoincrement())
+  code             String             @db.VarChar(25)
+  discount         Int
+  coupons_products coupons_products[]
+}
+
+model coupons_products {
+  id         Int      @id @default(autoincrement())
+  coupon_id  Int
+  product_id Int
+  coupons    coupons  @relation(fields: [coupon_id], references: [coupon_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_coupon_id")
+  products   products @relation(fields: [product_id], references: [product_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_product_id")
+}
+
+model list_products {
+  id         Int      @id @default(autoincrement())
+  list_id    Int
+  product_id Int
+  lists      lists    @relation(fields: [list_id], references: [list_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_list_id")
+  products   products @relation(fields: [product_id], references: [product_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_product_id")
+}
+
+model lists {
+  list_id       Int             @id @default(autoincrement())
+  name          String          @db.VarChar(25)
+  client_id     Int
+  list_products list_products[]
+  clients       clients         @relation(fields: [client_id], references: [client_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_client_id")
+}
+
+model orders {
+  order_id                     Int       @id @default(autoincrement())
+  order_date                   DateTime  @db.Date
+  order_approved_at            DateTime? @db.Date
+  order_in_preparation_date    DateTime? @db.Date
+  order_delivered_carrier_date DateTime? @db.Date
+  order_delivered_client_date  DateTime? @db.Date
+  shopping_id                  Int
+  shopping                     shopping  @relation(fields: [shopping_id], references: [shopping_id], onDelete: SetNull, onUpdate: NoAction, map: "fk_shopping_id")
+}
+
+model products {
+  product_id        Int                 @id @default(autoincrement())
+  name              String
+  description       String
+  price             Float
+  stock             Int
+  category_id       Int
+  coupons_products  coupons_products[]
+  list_products     list_products[]
+  categories        categories          @relation(fields: [category_id], references: [category_id], onDelete: SetNull, onUpdate: NoAction, map: "fk_category_id")
+  shopping          shopping[]
+  shopping_products shopping_products[]
+}
+
+model regions {
+  region_id Int         @id @default(autoincrement())
+  name      String      @db.VarChar(30)
+  addresses addresses[]
+}
+
+model sales {
+  sale_id     Int      @id @default(autoincrement())
+  sale_date   DateTime @db.Date
+  shopping_id Int
+  shopping    shopping @relation(fields: [shopping_id], references: [shopping_id], onDelete: SetNull, onUpdate: NoAction, map: "fk_shopping_id")
+}
+
+model shopping {
+  shopping_id       Int                 @id @default(autoincrement())
+  shopping_date     DateTime            @db.Date
+  shopping_quantity Int
+  shopping_subtotal Float
+  shipment_price    Float
+  shopping_total    Float
+  product_id        Int
+  client_id         Int
+  orders            orders[]
+  sales             sales[]
+  clients           clients             @relation(fields: [client_id], references: [client_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_client_id")
+  products          products            @relation(fields: [product_id], references: [product_id], onDelete: SetNull, onUpdate: NoAction, map: "fk_product_id")
+  shopping_products shopping_products[]
+  trackings         trackings[]
+}
+
+model shopping_products {
+  id          Int      @id @default(autoincrement())
+  product_id  Int
+  shopping_id Int
+  products    products @relation(fields: [product_id], references: [product_id], onDelete: SetNull, onUpdate: NoAction, map: "fk_product_id")
+  shopping    shopping @relation(fields: [shopping_id], references: [shopping_id], onDelete: SetNull, onUpdate: NoAction, map: "fk_shopping_id")
+}
+
+model trackings {
+  tracking_id    Int       @id @default(autoincrement())
+  received       Boolean
+  in_preparation Boolean
+  on_the_way     Boolean
+  shopping_id    Int
+  address_id     Int
+  addresses      addresses @relation(fields: [address_id], references: [address_id], onDelete: SetNull, onUpdate: NoAction, map: "fk_address_id")
+  shopping       shopping  @relation(fields: [shopping_id], references: [shopping_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_shopping_id")
+}
